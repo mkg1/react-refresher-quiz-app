@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Questions from '../questions.js';
 import Complete from '../assets/quiz-complete.png';
 import ProgressTimer from './Progress.jsx';
@@ -10,11 +10,20 @@ export default function Quiz() {
 
     const quizIsComplete = activeQuestionIndex === Questions.length;
 
-    function handleSelectAnswers(selectedAnswer) {
+    const handleSelectAnswer =useCallback(function handleSelectAnswers(selectedAnswer) {
         setUserAnswers((prevUserAnswers) => {
             return [...prevUserAnswers, selectedAnswer];
         });
-    }
+    }, [])
+
+    // need to have a way to ensure a new handleSelectAnswer function isn't created each time component re-renders;
+    // in the ProgressTimer component, setTimeout will re-render if timeout or onTimeout changes, but timeout doesn't change since it's a 
+    // stable number being passed in; onTimeout, however, will change
+    // Every time jsx return code in Quiz component gets re-evaluated, a new fn gets created. Jsx code gets re-evaluated whenever the state changes
+    // which happens when the user picks an answer...e.g., from onTimeout, even though it's setting it to null. Enter: useCallback
+    // useCallback ensures a function doesn't get recreated unless needed (their dependenciess change)
+
+    const handleSkipAnswer = useCallback(() => handleSelectAnswer(null), [handleSelectAnswer])
 
     if (quizIsComplete) {
         return <div id="summary">
@@ -29,7 +38,7 @@ export default function Quiz() {
     return (
     <div id="quiz">
         <div id="questions">
-            <ProgressTimer timeout={5000} onTimout={() => handleSelectAnswer(null)}/>
+            <ProgressTimer timeout={5000} onTimeout={handleSkipAnswer}/>
             <h2>{Questions[activeQuestionIndex].text}</h2>
             <ul id="answers">
                 {shuffledAnswers.map((option) => 
