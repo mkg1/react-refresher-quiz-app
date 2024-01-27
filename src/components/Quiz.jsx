@@ -1,36 +1,22 @@
 import { useState, useCallback } from 'react';
 import Questions from '../questions.js';
-import Complete from '../assets/quiz-complete.png';
 import Question from './Question.jsx';
+import Summary from './Summary.jsx';
 
 export default function Quiz() {
     const [userAnswers, setUserAnswers] = useState([]);
-    const [answerState, setAnswerState] = useState('');
 
+    // old comment from when question wasn't it's own component outside of quiz component: 
     // if question has been answered (answerState != ''), remain on current question for a bit by falling to the latter ternary option
-    const activeQuestionIndex = answerState === '' ? userAnswers.length : userAnswers.length - 1; //deriving active question index rather than managing it as state is better practice (less state to manage)
+    const activeQuestionIndex = userAnswers.length; //deriving active question index rather than managing it as state is better practice (less state to manage)
 
     const quizIsComplete = activeQuestionIndex === Questions.length;
 
     const handleSelectAnswer = useCallback(function handleSelectAnswer(selectedAnswer) {
-        setAnswerState('answered');
         setUserAnswers((prevUserAnswers) => {
             return [...prevUserAnswers, selectedAnswer];
         });
-
-        setTimeout(() => {
-            if (selectedAnswer === Questions[activeQuestionIndex].answers[0]) {
-                setAnswerState('correct');
-            } else {
-                setAnswerState('wrong');
-            }
-
-            // nested timer here allows user to stay on current question for 2 sec before moving on
-            setTimeout(() => {
-                setAnswerState('');
-            }, 2000)
-        }, 1000)
-    }, [activeQuestionIndex])
+    }, [])
 
     // need to have a way to ensure a new handleSelectAnswer function isn't created each time component re-renders;
     // in the ProgressTimer component, setTimeout will re-render if timeout or onTimeout changes, but timeout doesn't change since it's a 
@@ -42,21 +28,18 @@ export default function Quiz() {
     const handleSkipAnswer = useCallback(() => handleSelectAnswer(null), [handleSelectAnswer])
 
     if (quizIsComplete) {
-        return <div id="summary">
-            <img src={Complete} alt="trophy icon" />
-            <h2>Quiz Completed</h2>
-        </div>
+        return (
+            <Summary userAnswers={userAnswers} />
+        )
     }
 
     return (
     <div id="quiz">
+        {/* key is a prop reserved for react so even though we're passing exact same thing to questionIndex, duplication is necessary */}
         <Question 
             key={activeQuestionIndex}
-            questionText={Questions[activeQuestionIndex].text} 
-            answers={Questions[activeQuestionIndex].answers} 
+            questionIndex={activeQuestionIndex}
             onSelectAnswer={handleSelectAnswer} 
-            answerState={answerState}
-            selectedAnswer={userAnswers[userAnswers.length - 1]}
             onSkipAnswer={handleSkipAnswer}
             />
     </div>

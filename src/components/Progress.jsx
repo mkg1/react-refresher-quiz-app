@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function ProgressTimer({timeout, onTimeout}) {
+export default function ProgressTimer({timeout, onTimeout, mode}) {
     const [remainingTime, setRemainingTime] = useState(timeout);
 
     // need to wrap setTimeout in useEffect bc it will re-start a new timer each time component re-renders after setRemainingTime runs
@@ -26,5 +26,5 @@ export default function ProgressTimer({timeout, onTimeout}) {
     }, []
     )
 
-    return <progress id="question-time" max={timeout} value={remainingTime}/>
+    return <progress id="question-time" max={timeout} value={remainingTime} className={mode}/>
 }
