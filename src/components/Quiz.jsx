@@ -1,20 +1,36 @@
 import { useState, useCallback } from 'react';
 import Questions from '../questions.js';
 import Complete from '../assets/quiz-complete.png';
-import ProgressTimer from './Progress.jsx';
+import Question from './Question.jsx';
 
 export default function Quiz() {
     const [userAnswers, setUserAnswers] = useState([]);
+    const [answerState, setAnswerState] = useState('');
 
-    const activeQuestionIndex = userAnswers.length; //deriving active question index rather than managing it as state is better practice (less state to manage)
+    // if question has been answered (answerState != ''), remain on current question for a bit by falling to the latter ternary option
+    const activeQuestionIndex = answerState === '' ? userAnswers.length : userAnswers.length - 1; //deriving active question index rather than managing it as state is better practice (less state to manage)
 
     const quizIsComplete = activeQuestionIndex === Questions.length;
 
-    const handleSelectAnswer =useCallback(function handleSelectAnswers(selectedAnswer) {
+    const handleSelectAnswer = useCallback(function handleSelectAnswer(selectedAnswer) {
+        setAnswerState('answered');
         setUserAnswers((prevUserAnswers) => {
             return [...prevUserAnswers, selectedAnswer];
         });
-    }, [])
+
+        setTimeout(() => {
+            if (selectedAnswer === Questions[activeQuestionIndex].answers[0]) {
+                setAnswerState('correct');
+            } else {
+                setAnswerState('wrong');
+            }
+
+            // nested timer here allows user to stay on current question for 2 sec before moving on
+            setTimeout(() => {
+                setAnswerState('');
+            }, 2000)
+        }, 1000)
+    }, [activeQuestionIndex])
 
     // need to have a way to ensure a new handleSelectAnswer function isn't created each time component re-renders;
     // in the ProgressTimer component, setTimeout will re-render if timeout or onTimeout changes, but timeout doesn't change since it's a 
@@ -32,22 +48,17 @@ export default function Quiz() {
         </div>
     }
 
-    const shuffledAnswers = [...Questions[activeQuestionIndex].answers]; //create new array to enure og array stays as is (unshuffled)
-    shuffledAnswers.sort((a, b) => Math.random() - 0.5 );
-
     return (
     <div id="quiz">
-        <div id="questions">
-            <ProgressTimer timeout={5000} onTimeout={handleSkipAnswer}/>
-            <h2>{Questions[activeQuestionIndex].text}</h2>
-            <ul id="answers">
-                {shuffledAnswers.map((option) => 
-                <li key={option} className="answer">
-                    <button onClick={() => handleSelectAnswers(option)}>{option}</button>
-                </li>    
-            )}
-            </ul>
-        </div>
+        <Question 
+            key={activeQuestionIndex}
+            questionText={Questions[activeQuestionIndex].text} 
+            answers={Questions[activeQuestionIndex].answers} 
+            onSelectAnswer={handleSelectAnswer} 
+            answerState={answerState}
+            selectedAnswer={userAnswers[userAnswers.length - 1]}
+            onSkipAnswer={handleSkipAnswer}
+            />
     </div>
     )
 }
